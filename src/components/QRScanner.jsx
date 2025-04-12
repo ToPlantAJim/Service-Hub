@@ -1,24 +1,43 @@
-import { useState } from "react";
-import { QrReader } from "react-qr-reader";
+import React, { useEffect, useState } from 'react';
+import QrReader from 'react-qr-scanner';
 
-export default function QRScanner({ onScanSuccess }) {
-  const [scanResult, setScanResult] = useState("");
+const QRScanner = ({ onScan }) => {
+  const [scannedData, setScannedData] = useState(null);
+
+  const handleScan = (data) => {
+    if (data && data.text !== scannedData) {
+      setScannedData(data.text);
+      onScan(data.text); // Pass scanned QR data to parent
+    }
+  };
+
+  const handleError = (err) => {
+    console.error('QR Scan Error:', err);
+  };
+
+  const previewStyle = {
+    height: 240,
+    width: 320,
+    border: '2px solid #00ff99',
+    marginBottom: '10px'
+  };
 
   return (
-    <div style={{ marginTop: "1rem" }}>
+    <div style={{ padding: '20px' }}>
+      <h2>Scan QR Code</h2>
       <QrReader
-        constraints={{ facingMode: "environment" }}
-        onResult={(result, error) => {
-          if (!!result) {
-            setScanResult(result?.text);
-            onScanSuccess(result?.text);
-          }
-        }}
-        style={{ width: "100%" }}
+        delay={300}
+        onError={handleError}
+        onScan={handleScan}
+        style={previewStyle}
       />
-      <p style={{ marginTop: "10px", color: "white" }}>
-        {scanResult ? `Scanned: ${scanResult}` : "Waiting for scan..."}
-      </p>
+      {scannedData && (
+        <p>
+          ✅ Scanned: <strong>{scannedData}</strong>
+        </p>
+      )}
     </div>
   );
-}
+};
+
+export default QRScanner;
