@@ -1,43 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import QrReader from 'react-qr-scanner';
+// src/components/QRScanner.jsx
+import React, { useEffect } from "react";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 const QRScanner = ({ onScan }) => {
-  const [scannedData, setScannedData] = useState(null);
+  useEffect(() => {
+    const scanner = new Html5QrcodeScanner("qr-reader", {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+    });
 
-  const handleScan = (data) => {
-    if (data && data.text !== scannedData) {
-      setScannedData(data.text);
-      onScan(data.text); // Pass scanned QR data to parent
-    }
-  };
+    scanner.render(
+      (decodedText) => {
+        onScan(decodedText);
+        scanner.clear(); // Stop scanner after successful scan
+      },
+      (error) => {
+        console.warn("QR Scan error:", error);
+      }
+    );
 
-  const handleError = (err) => {
-    console.error('QR Scan Error:', err);
-  };
+    return () => {
+      scanner.clear().catch((err) => console.error("Cleanup error:", err));
+    };
+  }, [onScan]);
 
-  const previewStyle = {
-    height: 240,
-    width: 320,
-    border: '2px solid #00ff99',
-    marginBottom: '10px'
-  };
-
-  return (
-    <div style={{ padding: '20px' }}>
-      <h2>Scan QR Code</h2>
-      <QrReader
-        delay={300}
-        onError={handleError}
-        onScan={handleScan}
-        style={previewStyle}
-      />
-      {scannedData && (
-        <p>
-          ✅ Scanned: <strong>{scannedData}</strong>
-        </p>
-      )}
-    </div>
-  );
+  return <div id="qr-reader" />;
 };
 
 export default QRScanner;
