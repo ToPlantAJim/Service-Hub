@@ -1,94 +1,136 @@
-import { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 
-export default function CustomersTab() {
-  const [customers, setCustomers] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
-    accountNumber: "",
-    hasServiceAgreement: false,
-    notes: "",
-  });
+const uid = () => Math.random().toString(36).slice(2, 9);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("hvac_customers");
-    if (saved) setCustomers(JSON.parse(saved));
-  }, []);
+export default function CustomersTab({ customers, setCustomers }) {
+  // Add form state
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
 
-  useEffect(() => {
-    localStorage.setItem("hvac_customers", JSON.stringify(customers));
-  }, [customers]);
+  // Search
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return customers;
+    return customers.filter((c) =>
+      [c.name, c.phone, c.address, c.email]
+        .filter(Boolean)
+        .some((v) => v.toLowerCase().includes(q))
+    );
+  }, [customers, query]);
 
-  const addCustomer = () => {
-    if (!form.name) return;
-    setCustomers([form, ...customers]);
-    setForm({
-      name: "",
-      phone: "",
-      email: "",
-      address: "",
-      accountNumber: "",
-      hasServiceAgreement: false,
-      notes: "",
-    });
-  };
+  function addCustomer() {
+    if (!name.trim()) return alert("Name is required.");
+    setCustomers((prev) => [
+      { id: uid(), name: name.trim(), phone: phone.trim(), address: address.trim(), email: email.trim() },
+      ...prev,
+    ]);
+    setName(""); setPhone(""); setAddress(""); setEmail("");
+  }
+
+  function removeCustomer(id) {
+    setCustomers((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  // Import / Export
+  function exportCustomers() {
+    const blob = new Blob([JSON.stringify(customers, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "servicehub_customers.json"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importCustomers(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error("Expected an array of customers.");
+        const cleaned = data
+          .filter((c) => c && (c.name || c["Customer full name"]))
+          .map((c) => ({
+            id: c.id || uid(),
+            name: c.name || c["Customer full name"] || "Unnamed",
+            phone: c.phone || c["Phone numbers"] || "",
+            address: c.address || c["Bill address"] || "",
+            email: c.email || c["Email"] || "",
+          }));
+        setCustomers(cleaned);
+        alert(`Imported ${cleaned.length} customers.`);
+      } catch (e) {
+        alert("Import failed: " + e.message);
+      }
+    };
+    reader.readAsText(file);
+  }
 
   return (
-    <div>
-      <h2>Customer Management</h2>
+    <div className="mt-6 card p-4">
+      <h2 className="text-xl font-semibold mb-4">Customers</h2>
 
-      <input placeholder="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={input} />
-      <input placeholder="Phone Number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={input} />
-      <input placeholder="Email Address" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={input} />
-      <input placeholder="Street Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} style={input} />
-      <input placeholder="Account Number (if applicable)" value={form.accountNumber} onChange={(e) => setForm({ ...form, accountNumber: e.target.value })} style={input} />
-
-      <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <button className="btn btn-ghost" onClick={exportCustomers}>Export JSON</button>
+        <label className="btn btn-ghost cursor-pointer">
+          Import JSON
+          <input
+            type="file"
+            accept="application/json"
+            hidden
+            onChange={(e) => e.target.files?.[0] && importCustomers(e.target.files[0])}
+          />
+        </label>
         <input
-          type="checkbox"
-          checked={form.hasServiceAgreement}
-          onChange={(e) => setForm({ ...form, hasServiceAgreement: e.target.checked })}
+          className="input ml-auto"
+          placeholder="Search name / phone / email / address…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
-        {" "}Has Service Agreement
-      </label>
+      </div>
 
-      <textarea placeholder="Notes or Job Info" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} style={{ ...input, height: "80px" }} />
+      {/* Add new customer */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+        <input className="input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="input" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input className="input" placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+        <input className="input" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <button className="btn btn-primary" onClick={addCustomer}>Add Customer</button>
 
-      <button onClick={addCustomer} style={button}>Add Customer</button>
-
-      <h4 style={{ marginTop: "2rem" }}>Saved Customers</h4>
-      <ul>
-        {customers.map((c, idx) => (
-          <li key={idx} style={{ marginBottom: "1rem" }}>
-            <strong>{c.name}</strong> {c.hasServiceAgreement && "(Service Agreement ✅)"}<br />
-            {c.phone} | {c.email}<br />
-            {c.address}<br />
-            {c.accountNumber && <>Acct #: {c.accountNumber}<br /></>}
-            Notes: {c.notes}
-          </li>
-        ))}
-      </ul>
+      {/* List */}
+      <div className="mt-6 overflow-x-auto">
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="py-2">Name</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Email</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c) => (
+              <tr key={c.id}>
+                <td className="py-2">{c.name}</td>
+                <td>{c.phone}</td>
+                <td>{c.address}</td>
+                <td>{c.email}</td>
+                <td>
+                  <button className="btn btn-ghost" onClick={() => removeCustomer(c.id)}>Remove</button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td className="py-4 opacity-70" colSpan={5}>No customers found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-
-const input = {
-  display: "block",
-  width: "100%",
-  marginBottom: "0.5rem",
-  padding: "0.5rem",
-  backgroundColor: "#222",
-  color: "white",
-  border: "none",
-  borderRadius: "5px"
-};
-
-const button = {
-  padding: "0.5rem 1rem",
-  backgroundColor: "#4CAF50",
-  color: "white",
-  border: "none",
-  borderRadius: "5px"
-};

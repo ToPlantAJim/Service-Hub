@@ -1,68 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App theme tweaks */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --bg: 14 14 14;          /* near-black */
+  --panel: 32 32 32;       /* card bg */
+  --muted: 160 160 160;    /* subtle text */
+  --ring: 59 130 246;      /* focus ring */
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+html, body, #root {
+  height: 100%;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(59,130,246,.08), transparent 60%),
+              radial-gradient(1400px 800px at 110% 10%, rgba(16,185,129,.08), transparent 60%),
+              rgb(var(--bg));
+  color: white;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Cards */
+.card {
+  @apply rounded-2xl shadow-xl shadow-black/20 bg-[rgb(var(--panel))] ring-1 ring-white/5;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition;
 }
-button:hover {
-  border-color: #646cff;
+.btn-primary { @apply bg-teal-600 hover:bg-teal-500 active:scale-[.99]; }
+.btn-ghost   { @apply bg-white/10 hover:bg-white/20; }
+
+/* Tabs */
+.tabs { @apply flex flex-wrap gap-2; }
+.tab  { @apply rounded-xl px-3 py-2 text-sm bg-white/5 hover:bg-white/10 transition; }
+.tab-active { @apply bg-white/15 ring-1 ring-white/20; }
+
+/* Tables */
+.table {
+  @apply w-full text-sm;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.table thead {
+  @apply text-left text-white/80 sticky top-0 bg-[rgb(var(--panel))] z-10;
+}
+.table tbody tr { @apply border-t border-white/10; }
+.table tbody tr:nth-child(2n) { @apply bg-white/5; }
+
+/* Inputs */
+.input {
+  @apply bg-neutral-900 rounded-xl px-3 py-2 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))];
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Pretty scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
 }
+*::-webkit-scrollbar { height: 10px; width: 10px; }
+*::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 9999px; }
+*::-webkit-scrollbar-track { background: transparent; }
